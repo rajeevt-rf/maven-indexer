@@ -73,7 +73,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
+import java.io.FileWriter;  
 /**
  * Collection of some use cases.
  */
@@ -198,6 +198,19 @@ public class BasicUsageExample
         // example
         if ( true )
         {
+            FileWriter artifactInfoFile = null;
+            FileWriter emptyDocsFile = null;
+            FileWriter purlDocsFile = null;
+
+            try {
+                artifactInfoFile = new FileWriter("artifactinfo.txt");
+                emptyDocsFile = new FileWriter("emptyDocs.txt");
+                purlDocsFile = new FileWriter("purl.txt");
+              } catch (IOException e) {
+                System.out.println("An error occurred.");
+                e.printStackTrace();
+              }
+
             final IndexSearcher searcher = centralContext.acquireIndexSearcher();
             try
             {
@@ -209,14 +222,27 @@ public class BasicUsageExample
                     {
                         final Document doc = ir.document( i );
                         final ArtifactInfo ai = IndexUtils.constructArtifactInfo( doc, centralContext );
-                        System.out.println( ai.getGroupId() + ":" + ai.getArtifactId() + ":" + ai.getVersion() + ":"
-                                                + ai.getClassifier() + " (sha1=" + ai.getSha1() + ")" );
+                        if (ai != null) {
+                            if(artifactInfoFile != null)
+                                artifactInfoFile.write(ai.getGroupId() + '/' + ai.getArtifactId() + ',' + ai.getGroupId() + "," + ai.getArtifactId() + "," + ai.getVersion() + ","
+                                                        + ai.getClassifier() + "," + ai.getSha1() + "," +  ai.getLastModified() + "\n");
+                            if(purlDocsFile != null)
+                                purlDocsFile.write( "pkg:maven/" + ai.getGroupId() + '/' + ai.getArtifactId() + "@" + ai.getVersion() + "\n");
+                        }
+                        else {
+                            if(emptyDocsFile != null)
+                                emptyDocsFile.write(doc.toString() + "\n");
+                        }
+
                     }
                 }
             }
             finally
             {
                 centralContext.releaseIndexSearcher( searcher );
+                artifactInfoFile.close();
+                emptyDocsFile.close();
+                purlDocsFile.close();
             }
         }
 
